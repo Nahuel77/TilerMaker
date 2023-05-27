@@ -1,7 +1,11 @@
 import tkinter as tk
 from tkinter import colorchooser
-from PIL import ImageTk, Image, ImageDraw, ImageGrab
+from PIL import ImageTk, Image, ImageDraw, ImageGrab, ImageOps
 import queue as Q
+
+############################################################################################################
+#            Astor Tiler - Desarrollado por Nahuel. nahuelastor@gmail.com           2023                   #
+############################################################################################################
 
 root = tk.Tk()
 root.geometry("800x600+50+50")
@@ -10,9 +14,9 @@ root.wm_state('zoomed')
 root.resizable(False, False)
 color = "#000000"
 
-can_width = 16
-can_height = 16
-pixel_size = 20
+can_width = 32
+can_height = 32
+pixel_size = 10
 pressed = False
 fill_status = False
 draw_status = True
@@ -64,7 +68,11 @@ def draw(event):
 				end_draw(event)
 		else:
 			color = color_anterior
-			frame.config(bg=color)
+			if (color!="SystemButtonFace"):
+				frame.config(bg=color)
+				label_clean.place_forget()
+			elif (color=="SystemButtonFace"):
+				label_clean.place(x=51, y=71)
 			root.config(cursor="arrow")
 			draw_status = True
 
@@ -75,6 +83,7 @@ def seleccion_color():
 	global color
 	picked_color = colorchooser.askcolor()
 	color = picked_color[1]
+	label_clean.place_forget()
 	frame.config(bg=color)
 
 def pen():
@@ -115,46 +124,79 @@ def update_mosaico_muestra():
 				canvas2_muestra = tk.Canvas(mosaico_muestra, width=pixel_size, height=pixel_size, bg=color2, highlightthickness=0)
 				canvas2_muestra.place(x=i*pixel_size, y=j*pixel_size)
 
+############################################################################################################
+
 def construir():
-	#constructor.delete("all")
-	pix = 2
+	#creo una imagen RGBA png para el canvas 1 y 2
+	background = Image.new("RGBA", ((can_width), (can_height)), (0, 0, 0, 0))
+	details = Image.new("RGBA", ((can_width), (can_height)), (0, 0, 0, 0))
+	drawmap = ImageDraw.Draw(background)
+	drawmap2 = ImageDraw.Draw(details)
 	for i in range(can_width):
 		for j in range(can_height):
 			celda1 = celdas[i][j]
+			celda2 = celdas2[i][j]
 			color1 = celda1["background"]
-			if color1 != "SystemButtonFace":
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i)*pix, y=(j)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width)*pix, y=(j)*pix)
-				"""tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*2)*pix, y=(j)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*3)*pix, y=(j)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*4)*pix, y=(j)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*5)*pix, y=(j)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*6)*pix, y=(j)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*7)*pix, y=(j)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*8)*pix, y=(j)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*9)*pix, y=(j)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i)*pix, y=(j+can_height)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i)*pix, y=(j+can_height*2)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i)*pix, y=(j+can_height*3)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width)*pix, y=(j+can_height)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width)*pix, y=(j+can_height*2)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width)*pix, y=(j+can_height*3)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*2)*pix, y=(j+can_height)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*2)*pix, y=(j+can_height*2)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*2)*pix, y=(j+can_height*3)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*3)*pix, y=(j+can_height)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*3)*pix, y=(j+can_height*2)*pix)
-				tk.Canvas(constructor, width=pix, height=pix, bg=color1, highlightthickness=0).place(x=(i+can_width*3)*pix, y=(j+can_height*3)*pix)"""
+			color2 = celda2["background"]
+			if not(color1=="SystemButtonFace"):
+				drawmap.rectangle(((i, j), ((i + 1), (j + 1))), fill=color1)
+			if not(color2=="SystemButtonFace"):
+				drawmap2.rectangle(((i, j), ((i + 1), (j + 1))), fill=color2)
 
-	#creo una imagen RGBA png
-	image = Image.new("RGBA", (67, 67), (255, 0, 0, 0))
-	image.save("./mosaico.png", "PNG")
-	
-	#crear mapa postscript del canvas 1 y 2
+	details.save("./details_tile.png", "PNG")
 
-	#cargo su data a la imagen y la guardo
-	#image.putdata(newData)
-	image.save("./mosaico.png", "PNG")
+	#repito el canvas uno en forma de mosaicos 11x5
+	tiles_set = Image.new("RGBA", (can_width*11, can_height*5), (0, 0, 0, 0))
+
+	for i in range(11):
+		for j in range(5):
+			tiles_set.paste(background, (i*can_width, j*can_height))
+
+	mask = Image.open("mask.png")
+	mask = mask.convert("L")
+	output = ImageOps.fit(tiles_set, mask.size)
+	output = output.convert("RGBA")
+	output.putalpha(mask)
+
+	output.save("./background_tile.png", "PNG")
+
+	#repito los detalles para los tiles en top sin recorte
+	for i in range(11):
+		for j in range(5):
+			if ((i==1) or (i==5) or (i==6) or (i==8)) and (((j==0) or (j==3) and (i==1))):
+				output.paste(details, (i*can_width, j*can_height), mask=details)
+
+	output.save("./background_tile.png", "PNG")
+	#repito los detalles para los tiles en bottom sin recorte
+	details_botton = details.rotate(-180)
+	for i in range(11):
+		for j in range(5):
+			if ((i==1) and (j==2)) or ((j==3) and ((i==1) or (i==5) or (i==6) or (i==8))):
+				output.paste(details_botton, (i*can_width, j*can_height), mask=details_botton)
+
+	output.save("./background_tile.png", "PNG")
+	#repito los detalles para los tiles izquierdos
+	details_left = details.rotate(90)
+	for i in range(11):
+		for j in range(5):
+			if ((j==1) and ((i==0) or (i==3))) or ((i==4) and ((j==1) or (j==2) or (j==4))):
+				output.paste(details_left, (i*can_width, j*can_height), mask=details_left)
+
+	output.save("./background_tile.png", "PNG")
+	#repito los detalles para los tiles derechos
+	details_right = details.rotate(-90)
+	for i in range(11):
+		for j in range(5):
+			if ((j==1) and ((i==2) or (i==3))) or ((i==7) and ((j==1) or (j==2) or (j==4))):
+				output.paste(details_right, (i*can_width, j*can_height), mask=details_right)
+
+	output.save("./background_tile.png", "PNG")
+
+	tiles_set_tk = ImageTk.PhotoImage(output)
+	constructor.configure(image=tiles_set_tk)
+	constructor.image = tiles_set_tk
+
+############################################################################################################
 
 pen_image = Image.open("pen.png")
 pen_icon = pen_image.resize((20, 20))
@@ -218,7 +260,7 @@ label_canvas2.place(x=480, y=10)
 for i in range(can_width):
 	for j in range(can_height):
 		canvas = tk.Canvas(root, width=pixel_size, height=pixel_size, highlightthickness=0)
-		canvas.place(x=(i+7)*pixel_size, y=(j+2)*pixel_size)
+		canvas.place(x=(i+14)*pixel_size, y=(j+4)*pixel_size)
 		canvas.bind("<Button-1>", draw)
 		canvas.bind("<B1-Motion>", start_draw)
 		canvas.bind("<ButtonRelease-1>", end_draw)
@@ -227,16 +269,19 @@ for i in range(can_width):
 for i in range(can_width):
 	for j in range(can_height):
 		canvas = tk.Canvas(root, width=pixel_size, height=pixel_size, highlightthickness=0)
-		canvas.place(x=(i+24)*pixel_size, y=(j+2)*pixel_size)
+		canvas.place(x=(i+48)*pixel_size, y=(j+4)*pixel_size)
 		canvas.bind("<Button-1>", draw)
 		canvas.bind("<B1-Motion>", start_draw)
 		canvas.bind("<ButtonRelease-1>", end_draw)
 		celdas2[i][j] = canvas
 
+label_clean = tk.Label(root, width=20, height=20, image=clear_icon_tk, bg="#5C5C8C")
+label_clean.place_forget()
+
 label_constructor = tk.Label(root, text="Blob", bg="#5C5C8C", font=("Arial", 12))
 label_constructor.place(x=140, y=370)
 
-constructor = tk.Label(root, width=480, height=240, bg="#5C5C8C")
+constructor = tk.Label(root, width=(can_width*11), height=(can_height*5), bg="#5C5C8C")
 constructor.place(x=140, y=400)
 
 root.mainloop()
