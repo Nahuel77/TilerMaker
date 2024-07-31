@@ -1,4 +1,5 @@
 # TilerMaker
-Sin terminar / Not Finished
-Este codigo está en proceso y sujeto a cambios.
-This code is a work in proces and subjetct to changes.
+# Open Source
+
+This code/app do not pretend to be commercial.
+Este codigo/aplicación no pretende ser comercial.
